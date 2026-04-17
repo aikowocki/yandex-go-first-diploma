@@ -1,6 +1,9 @@
 package entity
 
-import "time"
+import (
+	"errors"
+	"time"
+)
 
 type OrderStatus string
 
@@ -20,6 +23,15 @@ type Order struct {
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
+
+var (
+	ErrOrderExists           = errors.New("order already exists")
+	ErrOrderNotFound         = errors.New("order not found")
+	ErrOrderNumberNotValid   = errors.New("order number not valid")
+	ErrOrderAlreadySubmitted = errors.New("order already submitted by this user") // -> 200
+	ErrOrderNotBelongToUser  = errors.New("order does not belong to user")        // -> 409
+
+)
 
 var doubled = [10]int{0, 2, 4, 6, 8, 1, 3, 5, 7, 9}
 

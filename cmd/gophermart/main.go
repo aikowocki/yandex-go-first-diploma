@@ -14,6 +14,8 @@ import (
 	"github.com/aikowocki/yandex-go-first-diploma/internal/adapter/postgres"
 	"github.com/aikowocki/yandex-go-first-diploma/internal/config"
 	"github.com/aikowocki/yandex-go-first-diploma/internal/logger"
+	"github.com/aikowocki/yandex-go-first-diploma/internal/pkg/auth"
+	"github.com/aikowocki/yandex-go-first-diploma/internal/usecase"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 )
@@ -54,7 +56,15 @@ func main() {
 		"address", cfg.ServerAddress,
 	)
 
-	r := handler.NewRouter()
+	jwtManager := auth.NewJWTManager(cfg.JWTSecret)
+	userRepo := postgres.NewUserRepo(pool)
+	orderRepo := postgres.NewOrderRepo(pool)
+	authUC := usecase.NewAuthUseCase(userRepo, jwtManager)
+	orderUC := usecase.NewOrderUseCase(orderRepo)
+	authHandler := handler.NewAuthHandler(authUC)
+	orderHandler := handler.NewOrderHandler(orderUC)
+
+	r := handler.NewRouter(authHandler, orderHandler, jwtManager)
 
 	srv := &http.Server{
 		Addr:    cfg.ServerAddress,
