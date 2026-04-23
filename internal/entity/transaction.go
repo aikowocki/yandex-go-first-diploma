@@ -2,11 +2,11 @@ package entity
 
 import "time"
 
-type TransactionType int
+type TransactionType string
 
 const (
-	TransactionTypeAccrual    TransactionType = 0 // начисление балов
-	TransactionTypeWithdrawal TransactionType = 1 // спсиание балов
+	TransactionTypeAccrual    TransactionType = "ACCRUAL"    // начисление балов
+	TransactionTypeWithdrawal TransactionType = "WITHDRAWAL" // списание балов
 )
 
 type Transaction struct {

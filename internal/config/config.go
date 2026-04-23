@@ -11,6 +11,7 @@ type Config struct {
 	DatabaseDSN          string `env:"DATABASE_URI"`
 	AccrualSystemAddress string `env:"ACCRUAL_SYSTEM_ADDRESS"`
 	JWTSecret            string `env:"JWT_SECRET"`
+	CacheAddress         string `env:"CACHE_ADDRESS"`
 }
 
 func New() (*Config, error) {
@@ -19,6 +20,7 @@ func New() (*Config, error) {
 	flag.StringVar(&cfg.DatabaseDSN, "d", "", "database connection DSN")
 	flag.StringVar(&cfg.AccrualSystemAddress, "r", "localhost:8080", "accrual system address")
 	flag.StringVar(&cfg.JWTSecret, "s", "secret", "jwt secret")
+	flag.StringVar(&cfg.CacheAddress, "c", "", "cache address(optional)")
 
 	flag.Parse()
 	if err := env.Parse(cfg); err != nil {

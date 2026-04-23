@@ -8,20 +8,19 @@ import (
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type UserRepo struct {
 	baseRepo
 }
 
-func NewUserRepo(pool *pgxpool.Pool) *UserRepo {
-	return &UserRepo{baseRepo: baseRepo{pool: pool}}
+func NewUserRepo(txManger *TxManager) *UserRepo {
+	return &UserRepo{baseRepo: baseRepo{txManager: txManger}}
 }
 
 func (r *UserRepo) Create(ctx context.Context, user *entity.User) error {
 	q := "INSERT INTO users (login, password_hash) VALUES ($1, $2) RETURNING id, created_at, updated_at"
-	err := r.pool.QueryRow(ctx, q, user.Login, user.PasswordHash).
+	err := r.db(ctx).QueryRow(ctx, q, user.Login, user.PasswordHash).
 		Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt)
 
 	if err != nil {
@@ -41,7 +40,7 @@ func (r *UserRepo) FindByLogin(ctx context.Context, login string) (*entity.User,
 	user := &entity.User{}
 	q := "SELECT id, password_hash, created_at, updated_at FROM users WHERE login = $1"
 
-	err := r.pool.QueryRow(ctx, q, login).
+	err := r.db(ctx).QueryRow(ctx, q, login).
 		Scan(&user.ID, &user.PasswordHash, &user.CreatedAt, &user.UpdatedAt)
 
 	if err != nil {

@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 
+	chimw "github.com/go-chi/chi/v5/middleware"
 	"go.uber.org/zap"
 )
 
@@ -60,8 +61,8 @@ func WithLogging() func(http.Handler) http.Handler {
 			next.ServeHTTP(&lw, r)
 
 			duration := time.Since(start)
-
 			zap.S().Infow("request completed",
+				"request_id", chimw.GetReqID(r.Context()),
 				"uri", uri,
 				"method", method,
 				"duration", duration,

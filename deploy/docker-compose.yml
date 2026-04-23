@@ -18,6 +18,54 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+  dragonfly:
+    image: ghcr.io/dragonflydb/dragonfly:latest
+    command: dragonfly --requirepass ${REDIS_PASSWORD}
+    container_name: dragonfly
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    ports:
+      - "6379:6379"
+    volumes:
+      - dragonfly_data:/data
+      
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  gophermart:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    container_name: gophermart
+    ports:
+     - "8081:8081"
+    environment:
+      RUN_ADDRESS: 0.0.0.0:8081
+      DATABASE_URI: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+      ACCRUAL_SYSTEM_ADDRESS: http://accrual:8080
+      JWT_SECRET: ${JWT_SECRET}
+      CACHE_ADDRESS: ${CACHE_ADDRESS}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      dragonfly:
+        condition: service_healthy
+    restart: unless-stopped
+  accrual:
+    platform: linux/amd64
+    image: debian:bookworm-slim
+    container_name: accrual
+    ports:
+      - "8080:8080"
+    volumes:
+      - ../cmd/accrual/accrual_linux_amd64:/accrual
+    command: ["/accrual"]
+    environment:
+      RUN_ADDRESS: 0.0.0.0:8080
+    restart: unless-stopped
 volumes:
   postgres_data:
+  dragonfly_data:
 

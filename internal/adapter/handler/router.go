@@ -1,17 +1,16 @@
 package handler
 
 import (
-	"net/http"
-
 	"github.com/aikowocki/yandex-go-first-diploma/internal/adapter/handler/middleware"
 	"github.com/aikowocki/yandex-go-first-diploma/internal/pkg/auth"
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
 )
 
-func NewRouter(auth *AuthHandler, order *OrderHandler, jwtManager *auth.JWTManager) *chi.Mux {
+func NewRouter(auth *AuthHandler, order *OrderHandler, balance *BalanceHandler, health *HealthHandler, jwtManager *auth.JWTManager) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(chimw.StripSlashes)
+	r.Use(chimw.RequestID)
 	r.Use(middleware.WithLogging())
 	r.Use(middleware.WithRecovery)
 
@@ -26,7 +25,7 @@ func NewRouter(auth *AuthHandler, order *OrderHandler, jwtManager *auth.JWTManag
 			// JSON
 			r.Group(func(r chi.Router) {
 				r.Use(chimw.AllowContentType("application/json"))
-				r.Post("/balance/withdraw", notImplemented)
+				r.Post("/balance/withdraw", balance.Withdraw)
 			})
 			// text/plain
 			r.Group(func(r chi.Router) {
@@ -36,14 +35,11 @@ func NewRouter(auth *AuthHandler, order *OrderHandler, jwtManager *auth.JWTManag
 
 			// GET
 			r.Get("/orders", order.GetUserOrders)
-			r.Get("/balance", notImplemented)
-			r.Get("/withdrawals", notImplemented)
+			r.Get("/balance", balance.GetBalance)
+			r.Get("/withdrawals", balance.GetWithdrawals)
 		})
 
 	})
+	r.Get("/ping", health.Ping)
 	return r
-}
-
-func notImplemented(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "Not Implemented", http.StatusNotImplemented)
 }

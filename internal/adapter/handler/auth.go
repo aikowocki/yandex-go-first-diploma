@@ -59,16 +59,6 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := json.NewDecoder(io.LimitReader(r.Body, 1024)).Decode(&req); err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
-		return
-	}
-
-	if req.Login == "" || req.Password == "" {
-		http.Error(w, "bad request", http.StatusBadRequest)
-		return
-	}
-
 	token, err := h.uc.Login(r.Context(), req.Login, req.Password)
 	if err != nil {
 		if errors.Is(err, entity.ErrUserNotFound) || errors.Is(err, entity.ErrInvalidCredentials) {
