@@ -18,9 +18,9 @@ import (
 )
 
 type App struct {
-	server *http.Server
-	worker *accrual.Worker
-	pool   *pgxpool.Pool
+	server     *http.Server
+	workerPool *accrual.WorkerPool
+	pool       *pgxpool.Pool
 }
 
 func New(ctx context.Context, cfg *config.Config) (*App, error) {
@@ -49,15 +49,16 @@ func New(ctx context.Context, cfg *config.Config) (*App, error) {
 	balanceUC := usecase.NewBalanceUseCase(balanceRepo, txManager)
 
 	accrualClient := accrual.NewClient(cfg.AccrualSystemAddress)
-	accrualWorker := accrual.NewWorker(accrualClient, orderRepo, balanceRepo, txManager)
+	accrualUC := usecase.NewAccrualUseCase(accrualClient, orderRepo, balanceRepo, txManager)
 
 	if cfg.CacheAddress != "" {
 		redisCache := cache.NewRedisCache(cfg.CacheAddress)
 		cachedBalanceRepo := cache.NewCacheBalanceRepo(balanceRepo, redisCache, 5*time.Minute)
 		balanceUC = usecase.NewBalanceUseCase(cachedBalanceRepo, txManager)
-		accrualWorker = accrual.NewWorker(accrualClient, orderRepo, cachedBalanceRepo, txManager)
+		accrualUC = usecase.NewAccrualUseCase(accrualClient, orderRepo, cachedBalanceRepo, txManager)
 	}
 
+	accrualWorkerPool := accrual.NewWorkerPool(accrualUC, 3)
 	balanceHandler := handler.NewBalanceHandler(balanceUC)
 	healthHandler := handler.NewHealthHandler(pool)
 
@@ -73,11 +74,11 @@ func New(ctx context.Context, cfg *config.Config) (*App, error) {
 		Handler: r,
 	}
 
-	return &App{server: srv, worker: accrualWorker, pool: pool}, nil
+	return &App{server: srv, workerPool: accrualWorkerPool, pool: pool}, nil
 }
 
 func (a *App) Run(ctx context.Context) {
-	go a.worker.Run(ctx)
+	go a.workerPool.Run(ctx)
 
 	zap.S().Infow("server starting", "address", a.server.Addr)
 	if err := a.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {

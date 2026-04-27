@@ -4,8 +4,10 @@ import (
 	"context"
 
 	"github.com/aikowocki/yandex-go-first-diploma/internal/entity"
+	"github.com/aikowocki/yandex-go-first-diploma/internal/port"
 )
 
+//go:generate mockery --name=BalanceRepository --output=../mocks --outpkg=mocks --filename=balance_repository.go
 type BalanceRepository interface {
 	LockByUserId(ctx context.Context, userID int64) error
 	GetBalance(ctx context.Context, userID int64) (entity.Balance, error)
@@ -15,10 +17,10 @@ type BalanceRepository interface {
 
 type BalanceUseCase struct {
 	repo      BalanceRepository
-	txManager TxManager
+	txManager port.TxManager
 }
 
-func NewBalanceUseCase(repo BalanceRepository, txManager TxManager) *BalanceUseCase {
+func NewBalanceUseCase(repo BalanceRepository, txManager port.TxManager) *BalanceUseCase {
 	return &BalanceUseCase{repo: repo, txManager: txManager}
 }
 

@@ -83,7 +83,7 @@ func (r *OrderRepo) FindByUser(ctx context.Context, userID int64) ([]entity.Orde
 func (r *OrderRepo) UpdateStatus(ctx context.Context, number string, status entity.OrderStatus, accrual *int64) error {
 	q := `
 		UPDATE orders
-		SET status = $2, accrual = $3 
+		SET status = $2, accrual = $3, updated_at = now()
 		WHERE number = $1
 	`
 	_, err := r.db(ctx).Exec(ctx, q, number, status, accrual)
@@ -95,6 +95,7 @@ func (r *OrderRepo) FindPending(ctx context.Context) ([]entity.Order, error) {
 		SELECT	id, user_id, number, status
 		FROM orders
 		WHERE status = ANY($1)
+		LIMIT 100
 	`
 	rows, err := r.db(ctx).Query(ctx, q, entity.OrderPendingStatuses)
 	if err != nil {

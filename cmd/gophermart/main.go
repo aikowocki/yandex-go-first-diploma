@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"os"
 	"os/signal"
@@ -16,10 +17,14 @@ import (
 )
 
 func main() {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, syscall.SIGINT)
+	defer stop()
 
 	if err := godotenv.Load(); err != nil {
-		log.Println("failed to load .env", "error", err)
+		if !errors.Is(err, os.ErrNotExist) {
+			// файл найден но битый
+			log.Fatal("failed to load .env", err)
+		}
 	}
 
 	loggerCleanup, err := logger.New()
@@ -38,11 +43,10 @@ func main() {
 		zap.S().Fatalw("failed to init app", "error", err)
 	}
 	defer application.Close()
+
 	go application.Run(ctx)
 
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
-	<-quit
+	<-ctx.Done()
 
 	zap.S().Infow("shutting down...")
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -50,6 +54,5 @@ func main() {
 	if err = application.Shutdown(shutdownCtx); err != nil {
 		zap.S().Fatalw("shutdown server error", "error", err)
 	}
-	cancel()
 	zap.S().Infow("server stopped")
 }

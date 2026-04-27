@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -10,15 +11,20 @@ import (
 	"github.com/aikowocki/yandex-go-first-diploma/internal/adapter/handler/middleware"
 	"github.com/aikowocki/yandex-go-first-diploma/internal/entity"
 	"github.com/aikowocki/yandex-go-first-diploma/internal/pkg/response"
-	"github.com/aikowocki/yandex-go-first-diploma/internal/usecase"
 	"go.uber.org/zap"
 )
 
 type BalanceHandler struct {
-	uc *usecase.BalanceUseCase
+	uc BalanceUseCase
 }
 
-func NewBalanceHandler(uc *usecase.BalanceUseCase) *BalanceHandler {
+type BalanceUseCase interface {
+	GetBalance(ctx context.Context, userID int64) (entity.Balance, error)
+	Withdraw(ctx context.Context, userID int64, orderNumber string, amount int64) error
+	GetWithdrawals(ctx context.Context, userID int64) ([]entity.Transaction, error)
+}
+
+func NewBalanceHandler(uc BalanceUseCase) *BalanceHandler {
 	return &BalanceHandler{uc: uc}
 }
 
@@ -78,7 +84,7 @@ func (h *BalanceHandler) Withdraw(w http.ResponseWriter, r *http.Request) {
 	err := h.uc.Withdraw(r.Context(), userID, req.Order, amount)
 
 	if err != nil {
-		switch true {
+		switch {
 		case errors.Is(err, entity.ErrOrderNumberNotValid):
 			response.WriteError(w, http.StatusUnprocessableEntity, "invalid order number")
 			return

@@ -7,7 +7,7 @@ import (
 	"github.com/aikowocki/yandex-go-first-diploma/internal/entity"
 )
 
-//go:generate mockery --name=OrderRepository --output=../mocks --outpkg=mocks
+//go:generate mockery --name=OrderRepository --output=../mocks --outpkg=mocks --filename=order_repository.go
 type OrderRepository interface {
 	Create(ctx context.Context, order *entity.Order) error
 	FindByNumber(ctx context.Context, number string) (*entity.Order, error)

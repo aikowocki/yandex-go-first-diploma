@@ -4,23 +4,26 @@ import (
 	"context"
 
 	"github.com/aikowocki/yandex-go-first-diploma/internal/entity"
-	"github.com/aikowocki/yandex-go-first-diploma/internal/pkg/auth"
 	"golang.org/x/crypto/bcrypt"
 )
 
-//go:generate mockery --name=UserRepository --output=../mocks --outpkg=mocks
+//go:generate mockery --name=UserRepository --output=../mocks --outpkg=mocks --filename=user_repository.go
 type UserRepository interface {
 	Create(ctx context.Context, user *entity.User) error
 	FindByLogin(ctx context.Context, login string) (*entity.User, error)
 }
 
-type AuthUseCase struct {
-	repo       UserRepository
-	jwtManager *auth.JWTManager
+type TokenGenerator interface {
+	Generate(userID int64) (string, error)
 }
 
-func NewAuthUseCase(repo UserRepository, jwtManager *auth.JWTManager) *AuthUseCase {
-	return &AuthUseCase{repo: repo, jwtManager: jwtManager}
+type AuthUseCase struct {
+	repo           UserRepository
+	tokenGenerator TokenGenerator
+}
+
+func NewAuthUseCase(repo UserRepository, tokenGenerator TokenGenerator) *AuthUseCase {
+	return &AuthUseCase{repo: repo, tokenGenerator: tokenGenerator}
 }
 
 func (uc *AuthUseCase) Register(ctx context.Context, login string, password string) (string, error) {
@@ -35,7 +38,7 @@ func (uc *AuthUseCase) Register(ctx context.Context, login string, password stri
 	if err := uc.repo.Create(ctx, &user); err != nil {
 		return "", err
 	}
-	return uc.jwtManager.Generate(user.ID)
+	return uc.tokenGenerator.Generate(user.ID)
 }
 
 func (uc *AuthUseCase) Login(ctx context.Context, login string, password string) (string, error) {
@@ -47,5 +50,5 @@ func (uc *AuthUseCase) Login(ctx context.Context, login string, password string)
 		return "", entity.ErrInvalidCredentials
 	}
 
-	return uc.jwtManager.Generate(user.ID)
+	return uc.tokenGenerator.Generate(user.ID)
 }

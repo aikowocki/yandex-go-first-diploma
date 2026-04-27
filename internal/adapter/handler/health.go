@@ -1,22 +1,26 @@
 package handler
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/aikowocki/yandex-go-first-diploma/internal/pkg/response"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type HealthHandler struct {
-	pool *pgxpool.Pool
+type Pinger interface {
+	Ping(ctx context.Context) error
 }
 
-func NewHealthHandler(pool *pgxpool.Pool) *HealthHandler {
-	return &HealthHandler{pool: pool}
+type HealthHandler struct {
+	pinger Pinger
+}
+
+func NewHealthHandler(pinger Pinger) *HealthHandler {
+	return &HealthHandler{pinger: pinger}
 }
 
 func (h *HealthHandler) Ping(w http.ResponseWriter, r *http.Request) {
-	if err := h.pool.Ping(r.Context()); err != nil {
+	if err := h.pinger.Ping(r.Context()); err != nil {
 		response.WriteError(w, http.StatusServiceUnavailable, "db unavailable")
 		return
 	}

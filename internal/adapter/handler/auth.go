@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -8,15 +9,19 @@ import (
 
 	"github.com/aikowocki/yandex-go-first-diploma/internal/entity"
 	"github.com/aikowocki/yandex-go-first-diploma/internal/pkg/response"
-	"github.com/aikowocki/yandex-go-first-diploma/internal/usecase"
 	"go.uber.org/zap"
 )
 
-type AuthHandler struct {
-	uc *usecase.AuthUseCase
+type AuthUseCase interface {
+	Register(ctx context.Context, login, password string) (string, error)
+	Login(ctx context.Context, login, password string) (string, error)
 }
 
-func NewAuthHandler(uc *usecase.AuthUseCase) *AuthHandler {
+type AuthHandler struct {
+	uc AuthUseCase
+}
+
+func NewAuthHandler(uc AuthUseCase) *AuthHandler {
 	return &AuthHandler{uc: uc}
 }
 

@@ -7,24 +7,28 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/aikowocki/yandex-go-first-diploma/internal/pkg/httpclient"
+	"github.com/aikowocki/yandex-go-first-diploma/internal/usecase"
+	"go.uber.org/zap"
 )
 
 type Client struct {
 	baseURL    string
-	httpClient *http.Client
+	httpClient *httpclient.RetryClient
+}
+
+func NewClient(baseURL string) *Client {
+	return &Client{
+		baseURL:    baseURL,
+		httpClient: httpclient.NewRetryClient(3, 5*time.Second),
+	}
 }
 
 type AccrualResponse struct {
 	Order   string  `json:"order"`
 	Status  string  `json:"status"`
 	Accrual float64 `json:"accrual"`
-}
-
-func NewClient(baseURL string) *Client {
-	return &Client{
-		baseURL:    baseURL,
-		httpClient: &http.Client{Timeout: 5 * time.Second},
-	}
 }
 
 type ErrTooManyRequests struct {
@@ -35,7 +39,7 @@ func (e *ErrTooManyRequests) Error() string {
 	return fmt.Sprintf("too many requests, retry after %s", e.RetryAfter)
 }
 
-func (c *Client) GetOrderAccrual(ctx context.Context, number string) (*AccrualResponse, error) {
+func (c *Client) GetOrderAccrual(ctx context.Context, number string) (*usecase.AccrualResult, error) {
 	url := c.baseURL + "/api/orders/" + number
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 
@@ -56,11 +60,19 @@ func (c *Client) GetOrderAccrual(ctx context.Context, number string) (*AccrualRe
 		if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
 			return nil, err
 		}
-		return &res, nil
+		return &usecase.AccrualResult{
+			Order:   res.Order,
+			Status:  res.Status,
+			Accrual: res.Accrual,
+		}, nil
 	case http.StatusNoContent:
 		return nil, nil
 	case http.StatusTooManyRequests:
-		retryAfter, _ := strconv.Atoi(resp.Header.Get("Retry-After"))
+		retryAfter, err := strconv.Atoi(resp.Header.Get("Retry-After"))
+		if err != nil {
+			zap.S().Warnw("failed to parse Retry-After, using default", "error", err)
+			retryAfter = 60
+		}
 		return nil, &ErrTooManyRequests{
 			RetryAfter: time.Duration(retryAfter) * time.Second,
 		}

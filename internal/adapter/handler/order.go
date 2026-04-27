@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -11,15 +12,19 @@ import (
 	"github.com/aikowocki/yandex-go-first-diploma/internal/adapter/handler/middleware"
 	"github.com/aikowocki/yandex-go-first-diploma/internal/entity"
 	"github.com/aikowocki/yandex-go-first-diploma/internal/pkg/response"
-	"github.com/aikowocki/yandex-go-first-diploma/internal/usecase"
 	"go.uber.org/zap"
 )
 
 type OrderHandler struct {
-	uc *usecase.OrderUseCase
+	uc OrderUseCase
 }
 
-func NewOrderHandler(uc *usecase.OrderUseCase) *OrderHandler {
+type OrderUseCase interface {
+	SubmitOrder(ctx context.Context, userID int64, number string) error
+	GetUserOrders(ctx context.Context, userID int64) ([]entity.Order, error)
+}
+
+func NewOrderHandler(uc OrderUseCase) *OrderHandler {
 	return &OrderHandler{uc: uc}
 }
 
@@ -65,7 +70,7 @@ func (h *OrderHandler) SubmitOrder(w http.ResponseWriter, r *http.Request) {
 	userID := middleware.MustGetUserID(r.Context())
 
 	if err := h.uc.SubmitOrder(r.Context(), userID, number); err != nil {
-		switch true {
+		switch {
 		case errors.Is(err, entity.ErrOrderAlreadySubmitted):
 			w.WriteHeader(http.StatusOK)
 		case errors.Is(err, entity.ErrOrderNotBelongToUser):
