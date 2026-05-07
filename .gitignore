@@ -25,3 +25,4 @@ vendor/
 .env
 deploy/.env
 /logs
+/tmp

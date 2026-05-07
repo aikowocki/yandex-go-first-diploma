@@ -7,10 +7,20 @@ tasks:
       desc: "Поднять всё (postgres + dragonfly + gophermart + accrual)"
       cmds:
         - docker compose -f deploy/docker-compose.yml up -d --build
+  rebuild:
+    desc: "Пересобрать и перезапустить gophermart"
+    cmds:
+      - docker compose -f deploy/docker-compose.yml up -d --build --no-deps gophermart
+
   down:
     desc: "Остановить всё"
     cmds:
       - docker compose -f deploy/docker-compose.yml down
+
+  reset:
+    desc: "Остановить всё и удалить данные (volumes)"
+    cmds:
+      - docker compose -f deploy/docker-compose.yml down -v
   db-logs:
     desc: "Показать логи PostgreSQL"
     cmds:

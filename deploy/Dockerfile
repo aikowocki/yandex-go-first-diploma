@@ -13,6 +13,7 @@ RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o gophermart ./cmd/gopher
 #RUN
 FROM alpine:3.20
 COPY --from=builder /app/gophermart /gophermart
-COPY --from=builder /app/internal/adapter/postgres/migrations /migrations
+# used embed.FS
+# COPY --from=builder /app/internal/adapter/postgres/migrations /migrations 
 
 CMD ["/gophermart"]
