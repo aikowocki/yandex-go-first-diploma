@@ -20,13 +20,13 @@ var OrderPendingStatuses = []string{
 }
 
 type Order struct {
-	ID        int64
+	ID        int64 `gorm:"primaryKey;autoIncrement"`
 	UserID    int64
 	Number    string
-	Status    OrderStatus
+	Status    OrderStatus `gorm:"type:order_status;default:'NEW';"`
 	Accrual   *int64
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CreatedAt time.Time `gorm:"autoCreateTime"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime"`
 }
 
 var (

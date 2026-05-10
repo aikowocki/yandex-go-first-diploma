@@ -47,6 +47,7 @@ services:
       ACCRUAL_SYSTEM_ADDRESS: http://accrual:8080
       JWT_SECRET: ${JWT_SECRET}
       CACHE_ADDRESS: ${CACHE_ADDRESS}
+      POSTGRES_DRIVER: ${POSTGRES_DRIVER}
     depends_on:
       postgres:
         condition: service_healthy
