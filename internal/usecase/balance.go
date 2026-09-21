@@ -9,7 +9,7 @@ import (
 
 //go:generate mockery --name=BalanceRepository --output=../mocks --outpkg=mocks --filename=balance_repository.go
 type BalanceRepository interface {
-	LockByUserId(ctx context.Context, userID int64) error
+	LockByUserID(ctx context.Context, userID int64) error
 	GetBalance(ctx context.Context, userID int64) (entity.Balance, error)
 	Withdraw(ctx context.Context, userID int64, orderNumber string, amount int64) error
 	GetWithdrawals(ctx context.Context, userID int64) ([]entity.Transaction, error)
@@ -31,7 +31,7 @@ func (uc *BalanceUseCase) Withdraw(ctx context.Context, userID int64, order stri
 
 	return uc.txManager.Do(ctx, func(ctx context.Context) error {
 		// Lock - что бы два паралельных списания не проходили одновременно
-		if err := uc.repo.LockByUserId(ctx, userID); err != nil {
+		if err := uc.repo.LockByUserID(ctx, userID); err != nil {
 			return err
 		}
 
