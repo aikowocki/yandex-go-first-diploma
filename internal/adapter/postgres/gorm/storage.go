@@ -1,4 +1,4 @@
-package postgres_gorm
+package postgresgorm
 
 import "github.com/aikowocki/yandex-go-first-diploma/internal/port"
 
