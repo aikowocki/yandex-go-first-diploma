@@ -95,7 +95,7 @@ func benchWithdraw(b *testing.B, storage port.Storage) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = storage.TxManager().Do(ctx, func(ctx context.Context) error {
-			if err := storage.BalanceRepo().LockByUserId(ctx, user.ID); err != nil {
+			if err := storage.BalanceRepo().LockByUserID(ctx, user.ID); err != nil {
 				return err
 			}
 			return storage.BalanceRepo().Withdraw(ctx, user.ID, fmt.Sprintf("%012d", i), 1)

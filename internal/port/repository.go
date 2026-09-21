@@ -20,7 +20,7 @@ type OrderRepository interface {
 }
 
 type BalanceRepository interface {
-	LockByUserId(ctx context.Context, userID int64) error
+	LockByUserID(ctx context.Context, userID int64) error
 	GetBalance(ctx context.Context, userID int64) (entity.Balance, error)
 	Withdraw(ctx context.Context, userID int64, orderNumber string, amount int64) error
 	GetWithdrawals(ctx context.Context, userID int64) ([]entity.Transaction, error)

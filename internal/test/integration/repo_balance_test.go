@@ -32,7 +32,7 @@ func testBalanceRepo_WithdrawAndGetBalance(t *testing.T, storage port.Storage) {
 
 	// Списываем
 	err = storage.TxManager().Do(ctx, func(ctx context.Context) error {
-		if err := balanceRepo.LockByUserId(ctx, user.ID); err != nil {
+		if err := balanceRepo.LockByUserID(ctx, user.ID); err != nil {
 			return err
 		}
 		return balanceRepo.Withdraw(ctx, user.ID, "4992398716", 200)

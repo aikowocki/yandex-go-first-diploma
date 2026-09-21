@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestBalanceRepo_WithdrawAndGetBalance(t *testing.T) {
+func TestBalanceRepoWithdrawAndGetBalance(t *testing.T) {
 	txm := setupTestDB(t)
 	userRepo := NewUserRepo(txm)
 	balanceRepo := NewBalanceRepo(txm)
@@ -32,7 +32,7 @@ func TestBalanceRepo_WithdrawAndGetBalance(t *testing.T) {
 
 	// Списываем
 	err = txm.Do(ctx, func(ctx context.Context) error {
-		if err := balanceRepo.LockByUserId(ctx, user.ID); err != nil {
+		if err := balanceRepo.LockByUserID(ctx, user.ID); err != nil {
 			return err
 		}
 		return balanceRepo.Withdraw(ctx, user.ID, "4992398716", 200)
@@ -47,7 +47,7 @@ func TestBalanceRepo_WithdrawAndGetBalance(t *testing.T) {
 	assert.Equal(t, int64(200), balance.Withdrawn)
 }
 
-func TestBalanceRepo_DuplicateAccrual(t *testing.T) {
+func TestBalanceRepoDuplicateAccrual(t *testing.T) {
 	txm := setupTestDB(t)
 	userRepo := NewUserRepo(txm)
 	balanceRepo := NewBalanceRepo(txm)
@@ -64,7 +64,7 @@ func TestBalanceRepo_DuplicateAccrual(t *testing.T) {
 	assert.ErrorIs(t, err, entity.ErrAccrualAlreadyExists)
 }
 
-func TestBalanceRepo_DuplicateWithdrawal(t *testing.T) {
+func TestBalanceRepoDuplicateWithdrawal(t *testing.T) {
 	txm := setupTestDB(t)
 	userRepo := NewUserRepo(txm)
 	balanceRepo := NewBalanceRepo(txm)

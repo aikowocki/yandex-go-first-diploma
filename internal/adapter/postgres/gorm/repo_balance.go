@@ -17,7 +17,7 @@ func NewBalanceRepo(txManager *TxManager) *BalanceRepo {
 	return &BalanceRepo{baseRepo: baseRepo{txManager: txManager}}
 }
 
-func (r *BalanceRepo) LockByUserId(ctx context.Context, userID int64) error {
+func (r *BalanceRepo) LockByUserID(ctx context.Context, userID int64) error {
 	return r.db(ctx).Exec("SELECT pg_advisory_xact_lock(1, ?)", userID).Error
 }
 
