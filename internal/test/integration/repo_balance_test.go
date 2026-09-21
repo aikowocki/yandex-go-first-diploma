@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func testBalanceRepo_WithdrawAndGetBalance(t *testing.T, storage port.Storage) {
+func testBalanceRepoWithdrawAndGetBalance(t *testing.T, storage port.Storage) {
 	userRepo := storage.UserRepo()
 	balanceRepo := storage.BalanceRepo()
 	ctx := context.Background()
@@ -47,7 +47,7 @@ func testBalanceRepo_WithdrawAndGetBalance(t *testing.T, storage port.Storage) {
 	assert.Equal(t, int64(200), balance.Withdrawn)
 }
 
-func testBalanceRepo_DuplicateAccrual(t *testing.T, storage port.Storage) {
+func testBalanceRepoDuplicateAccrual(t *testing.T, storage port.Storage) {
 	userRepo := storage.UserRepo()
 	balanceRepo := storage.BalanceRepo()
 	ctx := context.Background()
@@ -63,7 +63,7 @@ func testBalanceRepo_DuplicateAccrual(t *testing.T, storage port.Storage) {
 	assert.ErrorIs(t, err, entity.ErrAccrualAlreadyExists)
 }
 
-func testBalanceRepo_DuplicateWithdrawal(t *testing.T, storage port.Storage) {
+func testBalanceRepoDuplicateWithdrawal(t *testing.T, storage port.Storage) {
 	userRepo := storage.UserRepo()
 	balanceRepo := storage.BalanceRepo()
 	ctx := context.Background()
@@ -95,13 +95,13 @@ func TestBalanceRepo(t *testing.T) {
 		t.Run(d.name, func(t *testing.T) {
 			storage := d.storage(t)
 			t.Run("WithdrawAndGetBalance", func(t *testing.T) {
-				testBalanceRepo_WithdrawAndGetBalance(t, storage)
+				testBalanceRepoWithdrawAndGetBalance(t, storage)
 			})
 			t.Run("DuplicateAccrual", func(t *testing.T) {
-				testBalanceRepo_DuplicateAccrual(t, storage)
+				testBalanceRepoDuplicateAccrual(t, storage)
 			})
 			t.Run("DuplicateWithdrawal", func(t *testing.T) {
-				testBalanceRepo_DuplicateWithdrawal(t, storage)
+				testBalanceRepoDuplicateWithdrawal(t, storage)
 			})
 		})
 	}

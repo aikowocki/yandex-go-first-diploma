@@ -10,7 +10,7 @@ import (
 	"github.com/aikowocki/yandex-go-first-diploma/internal/adapter/cache"
 	"github.com/aikowocki/yandex-go-first-diploma/internal/adapter/handler"
 	"github.com/aikowocki/yandex-go-first-diploma/internal/adapter/postgres"
-	postgres_gorm "github.com/aikowocki/yandex-go-first-diploma/internal/adapter/postgres/gorm"
+	postgresgorm "github.com/aikowocki/yandex-go-first-diploma/internal/adapter/postgres/gorm"
 	"github.com/aikowocki/yandex-go-first-diploma/internal/config"
 	"github.com/aikowocki/yandex-go-first-diploma/internal/pkg/auth"
 	"github.com/aikowocki/yandex-go-first-diploma/internal/port"
@@ -30,7 +30,7 @@ func New(ctx context.Context, cfg *config.Config) (*App, error) {
 
 	switch cfg.PostgresDriver {
 	case "gorm":
-		pgStorage, err = postgres_gorm.NewStorage(cfg.DatabaseDSN)
+		pgStorage, err = postgresgorm.NewStorage(cfg.DatabaseDSN)
 		zap.S().Infow("Used gorm driver")
 	default:
 		zap.S().Infow("Used pgx driver")

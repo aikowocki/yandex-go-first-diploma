@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	pgadapter "github.com/aikowocki/yandex-go-first-diploma/internal/adapter/postgres"
-	postgres_gorm "github.com/aikowocki/yandex-go-first-diploma/internal/adapter/postgres/gorm"
+	postgresgorm "github.com/aikowocki/yandex-go-first-diploma/internal/adapter/postgres/gorm"
 	"github.com/aikowocki/yandex-go-first-diploma/internal/port"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
@@ -56,7 +56,7 @@ func setupPGXStorage(tb testing.TB) port.Storage {
 
 func setupGORMStorage(tb testing.TB) port.Storage {
 	dsn := setupTestDB(tb)
-	storage, err := postgres_gorm.NewStorage(dsn)
+	storage, err := postgresgorm.NewStorage(dsn)
 	if err != nil {
 		tb.Fatal(err)
 	}
