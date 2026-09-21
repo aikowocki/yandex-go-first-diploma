@@ -6,6 +6,14 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func NewPool(ctx context.Context, dsn string) (*pgxpool.Pool, error) {
-	return pgxpool.New(ctx, dsn)
+type DB struct {
+	*pgxpool.Pool
+}
+
+func NewPool(ctx context.Context, dsn string) (*DB, error) {
+	pool, err := pgxpool.New(ctx, dsn)
+	if err != nil {
+		return nil, err
+	}
+	return &DB{pool}, nil
 }

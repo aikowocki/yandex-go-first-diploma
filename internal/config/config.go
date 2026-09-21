@@ -12,11 +12,13 @@ type Config struct {
 	AccrualSystemAddress string `env:"ACCRUAL_SYSTEM_ADDRESS"`
 	JWTSecret            string `env:"JWT_SECRET"`
 	CacheAddress         string `env:"CACHE_ADDRESS"`
+	PostgresDriver       string `env:"POSTGRES_DRIVER"`
 }
 
 func New() (*Config, error) {
 	cfg := &Config{}
 	flag.StringVar(&cfg.ServerAddress, "a", "localhost:8081", "server address")
+	flag.StringVar(&cfg.PostgresDriver, "db-driver", "pgx", "db driver(optional)")
 	flag.StringVar(&cfg.DatabaseDSN, "d", "", "database connection DSN")
 	flag.StringVar(&cfg.AccrualSystemAddress, "r", "localhost:8080", "accrual system address")
 	flag.StringVar(&cfg.JWTSecret, "s", "secret", "jwt secret")

@@ -4,16 +4,15 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type txKey struct{}
 
 type TxManager struct {
-	pool *pgxpool.Pool
+	pool *DB
 }
 
-func NewTxManager(pool *pgxpool.Pool) *TxManager {
+func NewTxManager(pool *DB) *TxManager {
 	return &TxManager{pool: pool}
 }
 

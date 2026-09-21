@@ -14,7 +14,8 @@
 # Binaries
 cmd/gophermart/main
 cmd/gophermart/gophermart
-
+gophermart
+main
 # Dependency directories (remove the comment below to include it)
 vendor/
 
@@ -25,3 +26,4 @@ vendor/
 .env
 deploy/.env
 /logs
+/tmp

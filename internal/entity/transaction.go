@@ -10,10 +10,10 @@ const (
 )
 
 type Transaction struct {
-	ID          int64
+	ID          int64 `gorm:"primaryKey;autoIncrement"`
 	UserID      int64
 	OrderNumber string
-	Type        TransactionType
+	Type        TransactionType `gorm:"type:transaction_type"`
 	Amount      int64
-	CreatedAt   time.Time
+	CreatedAt   time.Time `gorm:"autoCreateTime"`
 }

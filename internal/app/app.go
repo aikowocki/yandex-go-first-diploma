@@ -10,57 +10,64 @@ import (
 	"github.com/aikowocki/yandex-go-first-diploma/internal/adapter/cache"
 	"github.com/aikowocki/yandex-go-first-diploma/internal/adapter/handler"
 	"github.com/aikowocki/yandex-go-first-diploma/internal/adapter/postgres"
+	postgres_gorm "github.com/aikowocki/yandex-go-first-diploma/internal/adapter/postgres/gorm"
 	"github.com/aikowocki/yandex-go-first-diploma/internal/config"
 	"github.com/aikowocki/yandex-go-first-diploma/internal/pkg/auth"
+	"github.com/aikowocki/yandex-go-first-diploma/internal/port"
 	"github.com/aikowocki/yandex-go-first-diploma/internal/usecase"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"go.uber.org/zap"
 )
 
 type App struct {
 	server     *http.Server
 	workerPool *accrual.WorkerPool
-	pool       *pgxpool.Pool
+	db         port.DB
 }
 
 func New(ctx context.Context, cfg *config.Config) (*App, error) {
-	pool, err := postgres.NewPool(ctx, cfg.DatabaseDSN)
+	var pgStorage port.Storage
+	var err error
+
+	switch cfg.PostgresDriver {
+	case "gorm":
+		pgStorage, err = postgres_gorm.NewStorage(cfg.DatabaseDSN)
+		zap.S().Infow("Used gorm driver")
+	default:
+		zap.S().Infow("Used pgx driver")
+		pgStorage, err = postgres.NewStorage(ctx, cfg.DatabaseDSN)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
 
 	if err := postgres.RunMigrations(cfg.DatabaseDSN); err != nil {
-		pool.Close()
+		pgStorage.DB().Close()
 		return nil, fmt.Errorf("failed to run migration: %w", err)
 	}
 
 	jwtManager := auth.NewJWTManager(cfg.JWTSecret)
-	txManager := postgres.NewTxManager(pool)
 
-	userRepo := postgres.NewUserRepo(txManager)
-	authUC := usecase.NewAuthUseCase(userRepo, jwtManager)
+	authUC := usecase.NewAuthUseCase(pgStorage.UserRepo(), jwtManager)
 	authHandler := handler.NewAuthHandler(authUC)
 
-	orderRepo := postgres.NewOrderRepo(txManager)
-	orderUC := usecase.NewOrderUseCase(orderRepo)
+	orderUC := usecase.NewOrderUseCase(pgStorage.OrderRepo())
 	orderHandler := handler.NewOrderHandler(orderUC)
 
-	balanceRepo := postgres.NewBalanceRepo(txManager)
-	balanceUC := usecase.NewBalanceUseCase(balanceRepo, txManager)
+	balanceUC := usecase.NewBalanceUseCase(pgStorage.BalanceRepo(), pgStorage.TxManager())
 
 	accrualClient := accrual.NewClient(cfg.AccrualSystemAddress)
-	accrualUC := usecase.NewAccrualUseCase(accrualClient, orderRepo, balanceRepo, txManager)
+	accrualUC := usecase.NewAccrualUseCase(accrualClient, pgStorage.OrderRepo(), pgStorage.BalanceRepo(), pgStorage.TxManager())
 
 	if cfg.CacheAddress != "" {
 		redisCache := cache.NewRedisCache(cfg.CacheAddress)
-		cachedBalanceRepo := cache.NewCacheBalanceRepo(balanceRepo, redisCache, 5*time.Minute)
-		balanceUC = usecase.NewBalanceUseCase(cachedBalanceRepo, txManager)
-		accrualUC = usecase.NewAccrualUseCase(accrualClient, orderRepo, cachedBalanceRepo, txManager)
+		cachedBalanceRepo := cache.NewCacheBalanceRepo(pgStorage.BalanceRepo(), redisCache, 5*time.Minute)
+		balanceUC = usecase.NewBalanceUseCase(cachedBalanceRepo, pgStorage.TxManager())
+		accrualUC = usecase.NewAccrualUseCase(accrualClient, pgStorage.OrderRepo(), cachedBalanceRepo, pgStorage.TxManager())
 	}
 
 	accrualWorkerPool := accrual.NewWorkerPool(accrualUC, 3)
 	balanceHandler := handler.NewBalanceHandler(balanceUC)
-	healthHandler := handler.NewHealthHandler(pool)
+	healthHandler := handler.NewHealthHandler(pgStorage.DB())
 
 	r := handler.NewRouter(authHandler, orderHandler, balanceHandler, healthHandler, jwtManager)
 
@@ -74,7 +81,7 @@ func New(ctx context.Context, cfg *config.Config) (*App, error) {
 		Handler: r,
 	}
 
-	return &App{server: srv, workerPool: accrualWorkerPool, pool: pool}, nil
+	return &App{server: srv, workerPool: accrualWorkerPool, db: pgStorage.DB()}, nil
 }
 
 func (a *App) Run(ctx context.Context) {
@@ -91,5 +98,5 @@ func (a *App) Shutdown(ctx context.Context) error {
 }
 
 func (a *App) Close() {
-	a.pool.Close()
+	a.db.Close()
 }
