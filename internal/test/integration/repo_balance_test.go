@@ -1,22 +1,22 @@
-package postgres
+package integration
 
 import (
 	"context"
 	"testing"
 
 	"github.com/aikowocki/yandex-go-first-diploma/internal/entity"
+	"github.com/aikowocki/yandex-go-first-diploma/internal/port"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestBalanceRepoWithdrawAndGetBalance(t *testing.T) {
-	txm := setupTestDB(t)
-	userRepo := NewUserRepo(txm)
-	balanceRepo := NewBalanceRepo(txm)
+func testBalanceRepoWithdrawAndGetBalance(t *testing.T, storage port.Storage) {
+	userRepo := storage.UserRepo()
+	balanceRepo := storage.BalanceRepo()
 	ctx := context.Background()
 
 	// Создаем юзера
-	user := &entity.User{Login: "test", PasswordHash: "hash"}
+	user := &entity.User{Login: t.Name(), PasswordHash: "hash"}
 	err := userRepo.Create(ctx, user)
 	require.NoError(t, err)
 
@@ -31,7 +31,7 @@ func TestBalanceRepoWithdrawAndGetBalance(t *testing.T) {
 	assert.Equal(t, int64(0), balance.Withdrawn)
 
 	// Списываем
-	err = txm.Do(ctx, func(ctx context.Context) error {
+	err = storage.TxManager().Do(ctx, func(ctx context.Context) error {
 		if err := balanceRepo.LockByUserID(ctx, user.ID); err != nil {
 			return err
 		}
@@ -47,13 +47,12 @@ func TestBalanceRepoWithdrawAndGetBalance(t *testing.T) {
 	assert.Equal(t, int64(200), balance.Withdrawn)
 }
 
-func TestBalanceRepoDuplicateAccrual(t *testing.T) {
-	txm := setupTestDB(t)
-	userRepo := NewUserRepo(txm)
-	balanceRepo := NewBalanceRepo(txm)
+func testBalanceRepoDuplicateAccrual(t *testing.T, storage port.Storage) {
+	userRepo := storage.UserRepo()
+	balanceRepo := storage.BalanceRepo()
 	ctx := context.Background()
 
-	user := &entity.User{Login: "test", PasswordHash: "hash"}
+	user := &entity.User{Login: t.Name(), PasswordHash: "hash"}
 	err := userRepo.Create(ctx, user)
 	require.NoError(t, err)
 
@@ -64,23 +63,46 @@ func TestBalanceRepoDuplicateAccrual(t *testing.T) {
 	assert.ErrorIs(t, err, entity.ErrAccrualAlreadyExists)
 }
 
-func TestBalanceRepoDuplicateWithdrawal(t *testing.T) {
-	txm := setupTestDB(t)
-	userRepo := NewUserRepo(txm)
-	balanceRepo := NewBalanceRepo(txm)
+func testBalanceRepoDuplicateWithdrawal(t *testing.T, storage port.Storage) {
+	userRepo := storage.UserRepo()
+	balanceRepo := storage.BalanceRepo()
 	ctx := context.Background()
 
-	user := &entity.User{Login: "test", PasswordHash: "hash"}
+	user := &entity.User{Login: t.Name(), PasswordHash: "hash"}
 	err := userRepo.Create(ctx, user)
 	require.NoError(t, err)
 
-	err = txm.Do(ctx, func(ctx context.Context) error {
+	err = storage.TxManager().Do(ctx, func(ctx context.Context) error {
 		return balanceRepo.Withdraw(ctx, user.ID, "4992398716", 200)
 	})
 	require.NoError(t, err)
 
-	err = txm.Do(ctx, func(ctx context.Context) error {
+	err = storage.TxManager().Do(ctx, func(ctx context.Context) error {
 		return balanceRepo.Withdraw(ctx, user.ID, "4992398716", 200)
 	})
 	assert.ErrorIs(t, err, entity.ErrWithdrawalAlreadyExists)
+}
+
+func TestBalanceRepo(t *testing.T) {
+	drivers := []struct {
+		name    string
+		storage func(tb testing.TB) port.Storage
+	}{
+		{"pgx", setupPGXStorage},
+		{"gorm", setupGORMStorage},
+	}
+	for _, d := range drivers {
+		t.Run(d.name, func(t *testing.T) {
+			storage := d.storage(t)
+			t.Run("WithdrawAndGetBalance", func(t *testing.T) {
+				testBalanceRepoWithdrawAndGetBalance(t, storage)
+			})
+			t.Run("DuplicateAccrual", func(t *testing.T) {
+				testBalanceRepoDuplicateAccrual(t, storage)
+			})
+			t.Run("DuplicateWithdrawal", func(t *testing.T) {
+				testBalanceRepoDuplicateWithdrawal(t, storage)
+			})
+		})
+	}
 }

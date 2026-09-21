@@ -72,8 +72,8 @@ func (_m *BalanceRepository) GetWithdrawals(ctx context.Context, userID int64) (
 	return r0, r1
 }
 
-// LockByUserId provides a mock function with given fields: ctx, userID
-func (_m *BalanceRepository) LockByUserId(ctx context.Context, userID int64) error {
+// LockByUserID provides a mock function with given fields: ctx, userID
+func (_m *BalanceRepository) LockByUserID(ctx context.Context, userID int64) error {
 	ret := _m.Called(ctx, userID)
 
 	if len(ret) == 0 {

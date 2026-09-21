@@ -28,7 +28,7 @@ func TestWithdraw_InvalidLuhn(t *testing.T) {
 
 func TestWithdraw_Success(t *testing.T) {
 	repo := new(mocks.BalanceRepository)
-	repo.On("LockByUserId", mock.Anything, int64(1)).Return(nil)
+	repo.On("LockByUserID", mock.Anything, int64(1)).Return(nil)
 	repo.On("GetBalance", mock.Anything, int64(1)).Return(entity.Balance{Current: 500}, nil)
 	repo.On("Withdraw", mock.Anything, int64(1), "79927398713", int64(100)).Return(nil)
 
@@ -41,7 +41,7 @@ func TestWithdraw_Success(t *testing.T) {
 
 func TestWithdraw_InsufficientFunds(t *testing.T) {
 	repo := new(mocks.BalanceRepository)
-	repo.On("LockByUserId", mock.Anything, int64(1)).Return(nil)
+	repo.On("LockByUserID", mock.Anything, int64(1)).Return(nil)
 	repo.On("GetBalance", mock.Anything, int64(1)).Return(entity.Balance{Current: 50}, nil)
 
 	uc := NewBalanceUseCase(repo, &mockTxManager{})
@@ -53,7 +53,7 @@ func TestWithdraw_InsufficientFunds(t *testing.T) {
 
 func TestWithdraw_LockError(t *testing.T) {
 	repo := new(mocks.BalanceRepository)
-	repo.On("LockByUserId", mock.Anything, int64(1)).Return(errors.New("failed"))
+	repo.On("LockByUserID", mock.Anything, int64(1)).Return(errors.New("failed"))
 
 	uc := NewBalanceUseCase(repo, &mockTxManager{})
 	err := uc.Withdraw(context.Background(), 1, "79927398713", 100)

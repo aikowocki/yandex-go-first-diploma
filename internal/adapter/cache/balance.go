@@ -11,7 +11,7 @@ import (
 )
 
 type BalanceRepo interface {
-	LockByUserId(ctx context.Context, userID int64) error
+	LockByUserID(ctx context.Context, userID int64) error
 	GetBalance(ctx context.Context, userID int64) (entity.Balance, error)
 	Withdraw(ctx context.Context, userID int64, orderNumber string, amount int64) error
 	GetWithdrawals(ctx context.Context, userID int64) ([]entity.Transaction, error)
@@ -60,9 +60,9 @@ func (r *CachedBalanceRepo) invalidate(ctx context.Context, userID int64) {
 	}
 }
 
-func (r *CachedBalanceRepo) LockByUserId(ctx context.Context, userID int64) error {
+func (r *CachedBalanceRepo) LockByUserID(ctx context.Context, userID int64) error {
 	r.invalidate(ctx, userID)
-	return r.db.LockByUserId(ctx, userID)
+	return r.db.LockByUserID(ctx, userID)
 }
 
 func (r *CachedBalanceRepo) Withdraw(ctx context.Context, userID int64, orderNumber string, amount int64) error {
